@@ -41,7 +41,9 @@
         <h3>Total Price: ${{ totalPrice.toFixed(2) }}</h3>
       </div>
 
-      <button @click="submitOrder" :disabled="!selectedProduct || quantity <= 0" class="order-button">Place Order</button>
+      <button @click="submitOrder" :disabled="!selectedProduct || quantity <= 0" class="order-button">
+        Place Order
+      </button>
     </div>
 
     <!-- Loading message if no products are fetched yet -->
@@ -52,12 +54,18 @@
 </template>
 
 <script>
+// ✅ Azure service URLs (NO localhost in production)
+const PRODUCT_SERVICE_BASE_URL = "https://8915midwebappproduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
+
+// TODO: replace this with your real order-service Azure URL
+const ORDER_SERVICE_BASE_URL = "https://YOUR-ORDER-SERVICE.azurewebsites.net";
+
 export default {
   data() {
     return {
       products: [],
       selectedProduct: null,
-      quantity: 1,  // Initialize quantity with a default value of 1
+      quantity: 1,
     };
   },
   async created() {
@@ -71,33 +79,34 @@ export default {
   methods: {
     async fetchProducts() {
       try {
-        const response = await fetch('http://localhost:3030/products');
+        const response = await fetch(`${PRODUCT_SERVICE_BASE_URL}/products`);
         if (response.ok) {
           this.products = await response.json();
         } else {
-          alert('Failed to fetch products.');
+          alert("Failed to fetch products.");
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
-        alert('Failed to fetch products.');
+        console.error("Error fetching products:", error);
+        alert("Failed to fetch products.");
       }
     },
+
     async submitOrder() {
       if (!this.selectedProduct || this.quantity <= 0) {
-        alert('Please select a product and enter a valid quantity.');
+        alert("Please select a product and enter a valid quantity.");
         return;
       }
 
       try {
-        const response = await fetch('http://localhost:3000/orders', {
-          method: 'POST',
+        const response = await fetch(`${ORDER_SERVICE_BASE_URL}/orders`, {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             product: this.selectedProduct,
             quantity: this.quantity,
-            totalPrice: this.totalPrice,  // Send the total price as well
+            totalPrice: this.totalPrice,
           }),
         });
 
@@ -105,10 +114,12 @@ export default {
           throw new Error(`Server error: ${response.status}`);
         }
 
-        alert(`Order for ${this.quantity} x ${this.selectedProduct.name} placed successfully! Total: $${this.totalPrice.toFixed(2)}`);
+        alert(
+          `Order for ${this.quantity} x ${this.selectedProduct.name} placed successfully! Total: $${this.totalPrice.toFixed(2)}`
+        );
       } catch (error) {
-        console.error('Error placing order:', error);
-        alert('Failed to place order.');
+        console.error("Error placing order:", error);
+        alert("Failed to place order.");
       }
     }
   }
@@ -116,13 +127,12 @@ export default {
 </script>
 
 <style scoped>
-
 /* Container for the store */
 .store-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  background-color: rgba(255, 255, 255, 0.9); /* Make the container semi-transparent */
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
