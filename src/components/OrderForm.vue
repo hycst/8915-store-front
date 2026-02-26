@@ -54,8 +54,8 @@
 </template>
 
 <script>
-const PRODUCT_SERVICE_BASE_URL = "https://8915midwebappProduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
-const ORDER_SERVICE_BASE_URL   = "https://8915midwebapp-gfgwf6hscxdza3f2.eastus2-01.azurewebsites.net";
+const PRODUCT_SERVICE_URL = "https://8915midwebappproduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
+const ORDER_SERVICE_URL   = "https://8915midwebapp-gfgwf6hscxdza3f2.eastus2-01.azurewebsites.net";
 
 export default {
   data() {
@@ -76,12 +76,9 @@ export default {
   methods: {
     async fetchProducts() {
       try {
-        const response = await fetch(`${PRODUCT_SERVICE_BASE_URL}/products`);
-        if (response.ok) {
-          this.products = await response.json();
-        } else {
-          alert("Failed to fetch products.");
-        }
+        const response = await fetch(`${PRODUCT_SERVICE_URL}/products`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        this.products = await response.json();
       } catch (error) {
         console.error("Error fetching products:", error);
         alert("Failed to fetch products.");
@@ -94,24 +91,31 @@ export default {
         return;
       }
 
+      const payload = {
+        product: this.selectedProduct,
+        quantity: this.quantity,
+        totalPrice: this.totalPrice,
+      };
+
+      // IMPORTANT:
+      // Many Node order-service labs expose POST at /api/orders (not /orders).
+      // Try /api/orders first.
+      const url = `${ORDER_SERVICE_URL}/api/orders`;
+
       try {
-        const response = await fetch(`${ORDER_SERVICE_BASE_URL}/orders`, {
+        const response = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product: this.selectedProduct,
-            quantity: this.quantity,
-            totalPrice: this.totalPrice,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
-          const text = await response.text().catch(() => "");
+          const text = await response.text();
           throw new Error(`Order service error: ${response.status} ${text}`);
         }
 
         alert(
-          `Order for ${this.quantity} x ${this.selectedProduct.name} placed successfully! Total: $${this.totalPrice.toFixed(2)}`
+          `Order placed! ${this.quantity} x ${this.selectedProduct.name} (Total $${this.totalPrice.toFixed(2)})`
         );
       } catch (error) {
         console.error("Error placing order:", error);
@@ -121,6 +125,8 @@ export default {
   }
 };
 </script>
+
+
 
 <style scoped>
 /* Container for the store */
