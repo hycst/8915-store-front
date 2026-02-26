@@ -53,9 +53,15 @@
   </div>
 </template>
 
+
 <script>
-const PRODUCT_SERVICE_URL = "https://8915midwebappproduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
-const ORDER_SERVICE_URL   = "https://8915midwebapp-gfgwf6hscxdza3f2.eastus2-01.azurewebsites.net";
+const PRODUCT_SERVICE_URL =
+  process.env.VUE_APP_PRODUCT_SERVICE_URL ||
+  "https://8915midwebappproduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
+
+const ORDER_SERVICE_URL =
+  process.env.VUE_APP_ORDER_SERVICE_URL ||
+  "https://8915midwebapp-gfgwf6hscxdza3f2.eastus2-01.azurewebsites.net";
 
 export default {
   data() {
@@ -71,13 +77,16 @@ export default {
   computed: {
     totalPrice() {
       return this.selectedProduct ? this.selectedProduct.price * this.quantity : 0;
-    }
+    },
   },
   methods: {
     async fetchProducts() {
       try {
         const response = await fetch(`${PRODUCT_SERVICE_URL}/products`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+          const txt = await response.text();
+          throw new Error(`Products API ${response.status}: ${txt}`);
+        }
         this.products = await response.json();
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -93,36 +102,31 @@ export default {
 
       const payload = {
         product: this.selectedProduct,
-        quantity: this.quantity,
-        totalPrice: this.totalPrice,
+        quantity: Number(this.quantity),
+        totalPrice: Number(this.totalPrice.toFixed(2)),
       };
 
-      // IMPORTANT:
-      // Many Node order-service labs expose POST at /api/orders (not /orders).
-      // Try /api/orders first.
-      const url = `${ORDER_SERVICE_URL}/api/orders`;
-
       try {
-        const response = await fetch(url, {
+        const response = await fetch(`${ORDER_SERVICE_URL}/orders`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Order service error: ${response.status} ${text}`);
+          const txt = await response.text();
+          throw new Error(`Order API ${response.status}: ${txt}`);
         }
 
         alert(
-          `Order placed! ${this.quantity} x ${this.selectedProduct.name} (Total $${this.totalPrice.toFixed(2)})`
+          `Order placed! ${payload.quantity} x ${payload.product.name}. Total: $${payload.totalPrice.toFixed(2)}`
         );
       } catch (error) {
         console.error("Error placing order:", error);
         alert("Failed to place order.");
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
