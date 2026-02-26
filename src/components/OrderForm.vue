@@ -54,11 +54,8 @@
 </template>
 
 <script>
-// ✅ Azure service URLs (NO localhost in production)
-const PRODUCT_SERVICE_BASE_URL = "https://8915midwebappproduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
-
-// TODO: replace this with your real order-service Azure URL
-const ORDER_SERVICE_BASE_URL = "https://YOUR-ORDER-SERVICE.azurewebsites.net";
+const PRODUCT_SERVICE_BASE_URL = "https://8915midwebappProduct-eze8fnc9bgcfbmhd.eastus2-01.azurewebsites.net";
+const ORDER_SERVICE_BASE_URL   = "https://8915midwebapp-gfgwf6hscxdza3f2.eastus2-01.azurewebsites.net";
 
 export default {
   data() {
@@ -100,9 +97,7 @@ export default {
       try {
         const response = await fetch(`${ORDER_SERVICE_BASE_URL}/orders`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             product: this.selectedProduct,
             quantity: this.quantity,
@@ -111,7 +106,8 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
+          const text = await response.text().catch(() => "");
+          throw new Error(`Order service error: ${response.status} ${text}`);
         }
 
         alert(
